@@ -92,7 +92,8 @@
     videoEl.addEventListener("stalled", function () { seeking = false; });
     videoEl.addEventListener("loadeddata", function () { try { videoEl.currentTime = 0; } catch (e) {} });
 
-    if (rm) { canvas.style.visibility = "hidden"; }
+    var lowPower = rm || (window.matchMedia && window.matchMedia("(max-width:700px)").matches);
+    if (lowPower) { canvas.style.visibility = "hidden"; }   // skip the heavy scrub on mobile / reduced-motion
     else {
       canvas.style.visibility = "hidden";
       resizeCanvas();
@@ -348,13 +349,21 @@
   /* ---------- gallery: click-to-load heavy 3D ---------- */
   $all(".load3d").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      var cell = document.createElement("div");
-      cell.className = "cell";
-      cell.innerHTML = '<span class="tag">3d · drag</span>';
-      cell.appendChild(makeViewer(btn.dataset.glb, true));
-      btn.replaceWith(cell);
+      btn.replaceWith(makeViewer(btn.dataset.glb, true));
     });
   });
+
+  /* ---------- gallery driving videos: play only when visible ---------- */
+  if ("IntersectionObserver" in window) {
+    var vio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else v.pause();
+      });
+    }, { threshold: 0.15 });
+    $all(".frame video").forEach(function (v) { vio.observe(v); });
+  }
 
   /* ---------- skeleton viewer (Three.js, window.mountSkel) ---------- */
   function whenSkelReady(cb) {
