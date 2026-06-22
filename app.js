@@ -310,10 +310,18 @@
     }
     function renderRig(res) {
       var mSlot = $('[data-slot="model"]', result);
-      mSlot.querySelectorAll("model-viewer").forEach(function (n) { n.remove(); });
-      mSlot.appendChild(makeViewer(res.model, false));
+      mSlot.innerHTML = "";
+      var host = document.createElement("div");
+      host.className = "skel-cell"; host.style.cssText = "position:absolute;inset:0";
+      mSlot.appendChild(host);
       $('[data-dl="model"]', result).href = res.model;
-      $("[data-stat]", result).innerHTML = res.bones ? "<b>" + res.bones + "</b> bones · skin weights bound" : "rig bound";
+      var stat = $("[data-stat]", result);
+      stat.innerHTML = res.bones ? "<b>" + res.bones + "</b> bones · skin weights bound" : "rig bound";
+      window.__whenSkelReady(function () {
+        window.mountSkel(host, res.model, { skeleton: true, onload: function (info) {
+          if (info && info.bones) stat.innerHTML = "<b>" + info.bones + "</b> bones · skin weights bound";
+        } });
+      });
       result.classList.add("show");
     }
 
@@ -345,6 +353,21 @@
       cell.innerHTML = '<span class="tag">3d · drag</span>';
       cell.appendChild(makeViewer(btn.dataset.glb, true));
       btn.replaceWith(cell);
+    });
+  });
+
+  /* ---------- skeleton viewer (Three.js, window.mountSkel) ---------- */
+  function whenSkelReady(cb) {
+    if (window.mountSkel) return cb();
+    var t = setInterval(function () { if (window.mountSkel) { clearInterval(t); cb(); } }, 120);
+  }
+  window.__whenSkelReady = whenSkelReady;
+  $all(".load-skel").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var host = document.createElement("div");
+      host.className = "skel-cell"; host.style.cssText = "position:absolute;inset:0";
+      btn.replaceWith(host);
+      whenSkelReady(function () { window.mountSkel(host, btn.dataset.skel, { skeleton: true, autorotate: true }); });
     });
   });
 })();

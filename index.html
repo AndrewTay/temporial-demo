@@ -10,7 +10,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link href="styles.css" rel="stylesheet"/>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/jsm/" } }
+</script>
 <script type="module" src="vendor/model-viewer.min.js"></script>
+<script type="module" src="rig-viewer.js"></script>
 </head>
 <body id="top">
 
@@ -217,6 +221,19 @@
           <button class="cell load3d" data-glb="models/pug_walk.glb"><span class="tag">3d</span><span class="load3d-btn">⊕ load 3D</span></button>
         </div>
         <div class="meta"><div class="t">Pug · walk</div><div class="d">cartoon · textured</div></div>
+      </div>
+    </div>
+
+    <div class="rigshow reveal">
+      <div class="rigshow-stage">
+        <button class="cell load-skel" data-skel="models/cat_rigged.glb"><span class="tag">rig · 3d</span><span class="load3d-btn">⊕ load skeleton</span></button>
+      </div>
+      <div class="rigshow-copy">
+        <div class="panel-label">◆ Auto-rig · SkinTokens · live in-browser</div>
+        <h3>The rig, not just the mesh</h3>
+        <p>This cat was auto-rigged by SkinTokens — <b>27 bones</b> with per-vertex skin weights, rendered
+          live with Three.js (no Blender). Drag to orbit; the mesh goes translucent so the predicted skeleton
+          shows through — toggle it with the button.</p>
       </div>
     </div>
   </div>

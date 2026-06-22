@@ -167,6 +167,31 @@ h2.title{font-size:clamp(1.8rem,3.6vw,2.7rem);max-width:20ch;margin-bottom:18px;
 .gcard .cell.load3d:hover{background:#10141d}
 .load3d-btn{font-family:var(--mono);font-size:.78rem;color:var(--ink-2);border:1px solid var(--line-2);border-radius:8px;padding:9px 15px;background:rgba(124,196,255,.06);transition:.2s}
 .gcard .cell.load3d:hover .load3d-btn{border-color:var(--accent);color:#fff;box-shadow:0 0 20px rgba(124,196,255,.18)}
+
+/* ---- three.js skeleton viewer ---- */
+.skel-host{position:relative;width:100%;height:100%;background:radial-gradient(circle at 50% 38%,#121826,#080b11)}
+.skel-host canvas{display:block;width:100%;height:100%}
+.skel-cell,.cell.load-skel{position:relative}
+.skel-toggle{position:absolute;top:9px;right:9px;z-index:2;font-family:var(--mono);font-size:.62rem;letter-spacing:.04em;
+  color:var(--ink);background:rgba(6,8,13,.6);border:1px solid var(--line-2);border-radius:7px;padding:5px 9px;cursor:pointer;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:.2s}
+.skel-toggle:hover{border-color:var(--accent);color:#fff}
+.skel-err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--bad);font-family:var(--mono);font-size:.8rem}
+.cell.load-skel{border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cell.load-skel:hover{background:#10141d}
+.cell.load-skel:hover .load3d-btn{border-color:var(--accent);color:#fff;box-shadow:0 0 20px rgba(124,196,255,.18)}
+
+/* ---- featured rig showcase ---- */
+.rigshow{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:center;
+  border:1px solid rgba(169,184,255,.25);border-radius:18px;padding:clamp(14px,2vw,22px);
+  background:var(--panel);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
+.rigshow-stage{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;aspect-ratio:1/1;background:#0a0d14}
+.rigshow-stage .cell.load-skel,.rigshow-stage .skel-cell{position:absolute;inset:0}
+.rigshow-copy .panel-label{margin-bottom:8px}
+.rigshow-copy h3{font-size:1.32rem;letter-spacing:-.02em;margin:2px 0 10px}
+.rigshow-copy p{color:var(--ink-2);font-weight:300;font-size:.96rem;max-width:46ch}
+.rigshow-copy p b{color:var(--ink);font-weight:600}
+@media(max-width:760px){.rigshow{grid-template-columns:1fr}}
 .gcard .meta{padding:14px 16px}
 .gcard .meta .t{font-weight:600;font-size:1rem}
 .gcard .meta .d{color:var(--ink-3);font-size:.82rem;font-family:var(--mono);margin-top:3px}
