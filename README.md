@@ -2,8 +2,9 @@
 
 **Live:** https://andtay.com/temporial-demo
 
-Turn an image-born 3D model into living, rigged 3D:
+Turn a single image into living, rigged 3D:
 
+- **Generate** — an image → **Hunyuan3D-2** (local, open source) or **Tencent Cloud** Hunyuan To 3D (BYOK) → a textured `.glb`.
 - **Animate** — a model `.glb` + a short driving video → **ActionMesh M5** → an animated `.glb` (rotatable) **and** a looping GIF.
 - **Rig** — a model `.glb` → **SkinTokens / TokenRig** → a skinned, animation-ready `.glb`.
 
@@ -13,9 +14,10 @@ Three.js **skeleton** showcase), and the instant **animate samples** are fully s
 GitHub Pages as-is. The skeleton viewer (`rig-viewer.js`) renders a rigged `.glb`'s bones in-browser
 with Three.js — no Blender needed.
 
-The two **upload** tools run the real GPU pipelines, which need a backend; on the hosted site they
-show a *"runs locally"* state with a link back here. To run the live generators yourself, see
-[`pipeline/PIPELINE.md`](pipeline/PIPELINE.md).
+The three **upload** tools (generate, animate, rig) run real pipelines that need a backend; on the
+hosted site they show a *"runs locally"* state with a link back here. Generate also offers a **cloud
+BYOK** option (Tencent Cloud Hunyuan To 3D) that needs no GPU — your keys are sent only to your own
+local server to sign the request. To run any of it yourself, see [`pipeline/PIPELINE.md`](pipeline/PIPELINE.md).
 
 ## Run the static site locally
 ```bash

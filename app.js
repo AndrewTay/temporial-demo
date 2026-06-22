@@ -174,13 +174,15 @@
   function Tool(rootId, kind) {
     var root = document.getElementById(rootId);
     if (!root) return;
-    var STEPS = kind === "animate"
-      ? ["upload", "seg", "w1", "w2", "w3", "build"]
+    var STEPS = kind === "animate" ? ["upload", "seg", "w1", "w2", "w3", "build"]
+      : kind === "generate" ? ["upload", "generate", "build"]
       : ["upload", "rig", "build"];
     var MSG = kind === "animate" ? {
       upload: "Uploading files…", seg: "Segmenting + extracting native windows…",
       w1: "ActionMesh · window 1 / 3…", w2: "ActionMesh · window 2 / 3 (anchored)…",
       w3: "ActionMesh · window 3 / 3 (anchored)…", build: "Chaining + anti-drift · rendering GIF…"
+    } : kind === "generate" ? {
+      upload: "Uploading image…", generate: "Generating textured mesh…", build: "Fetching + exporting .glb…"
     } : {
       upload: "Uploading file…", rig: "Predicting skeleton + skin weights…", build: "Binding + exporting rig…"
     };
@@ -189,7 +191,7 @@
     var stage = $(".stage", root), result = $(".result", root), banner = $(".banner", root);
     var runBtn = $("[data-run]", root);
     var runMsg = $(".run-msg", root), elapsedEl = $(".elapsed", root), proglog = $(".proglog", root);
-    var required = kind === "animate" ? ["model", "video"] : ["model"];
+    var required = kind === "animate" ? ["model", "video"] : kind === "generate" ? ["image"] : ["model"];
 
     /* dropzones */
     $all(".dropzone", root).forEach(function (dz) {
@@ -243,6 +245,18 @@
     /* run */
     runBtn.addEventListener("click", function () { startRun(null); });
 
+    /* generate: engine toggle (local Hunyuan3D-2 / BYOK Tencent) */
+    if (kind === "generate") {
+      var byok = $(".byok-fields", root);
+      var syncEngine = function () {
+        var v = (root.querySelector('input[name="gen-engine"]:checked') || {}).value;
+        if (byok) byok.hidden = (v !== "byok");
+      };
+      $all('input[name="gen-engine"]', root).forEach(function (r) { r.addEventListener("change", syncEngine); });
+      syncEngine();
+      if (typeof LIVE !== "undefined" && !LIVE && byok) byok.hidden = true;   // never solicit secrets on the static site
+    }
+
     function startRun(sampleReq) {
       if (!LIVE) return showLocalOnly();
       hideErr(); result.classList.remove("show");
@@ -253,13 +267,18 @@
       var t0 = Date.now();
       var timer = setInterval(function () { elapsedEl.textContent = fmtElapsed(Math.floor((Date.now() - t0) / 1000)); }, 1000);
 
-      var url = kind === "animate" ? "/api/animate" : "/api/rig";
+      var url = kind === "animate" ? "/api/animate" : kind === "generate" ? "/api/generate" : "/api/rig";
       var opts;
       if (sampleReq) {
         opts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sampleReq) };
       } else {
         var fd = new FormData();
         required.forEach(function (k) { fd.append(k, files[k]); });
+        if (kind === "generate") {
+          var eng = (root.querySelector('input[name="gen-engine"]:checked') || {}).value || "local";
+          fd.append("mode", eng);
+          if (eng === "byok") $all(".byok-in", root).forEach(function (i) { if (i.value) fd.append(i.dataset.k, i.value); });
+        }
         opts = { method: "POST", body: fd };
       }
       fetch(url, opts).then(function (r) { return r.json(); }).then(function (j) {
@@ -282,6 +301,7 @@
           $(".spinner", root).style.visibility = "hidden";
           runBtn.disabled = false; refreshRun();
           if (kind === "animate") renderAnimate(j.result, j.result.stat || "");
+          else if (kind === "generate") renderGen(j.result);
           else renderRig(j.result);
           return;
         }
@@ -307,6 +327,14 @@
       $('[data-dl="model"]', result).href = res.model;
       $('[data-dl="gif"]', result).href = res.gif;
       $("[data-stat]", result).innerHTML = stat ? "<b>✓</b> " + stat : "";
+      result.classList.add("show");
+    }
+    function renderGen(res) {
+      var mSlot = $('[data-slot="model"]', result);
+      mSlot.innerHTML = "";
+      mSlot.appendChild(makeViewer(res.model, false));
+      $('[data-dl="model"]', result).href = res.model;
+      $("[data-stat]", result).innerHTML = res.source ? "<b>✓</b> " + res.source : "generated";
       result.classList.add("show");
     }
     function renderRig(res) {
@@ -343,6 +371,7 @@
     }
   }
 
+  Tool("tool-generate", "generate");
   Tool("tool-animate", "animate");
   Tool("tool-rig", "rig");
 

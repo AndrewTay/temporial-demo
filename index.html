@@ -34,6 +34,7 @@
   <div class="nav-in">
     <a class="brand" href="#top"><img src="assets/nav_mark.png" alt="Temporial mark"/><span class="wm">Temporial</span></a>
     <div class="nav-links">
+      <a href="#generate">Generate</a>
       <a href="#animate">Animate</a>
       <a href="#rig">Rig</a>
       <a href="#gallery">Gallery</a>
@@ -48,25 +49,88 @@
   <div class="wrap hero-inner">
     <span class="eyebrow reveal">Live demo · the last 10% of 4D</span>
     <h1 class="reveal">Give an image-born 3D model <span class="grad">motion and a rig</span>.</h1>
-    <p class="lead reveal">Drop in a static mesh and a short driving video, and Temporial returns a topology-consistent
-      <em>animated</em> 3D asset as a looping GIF <b>and</b> a 3D model you in your browser. Or hand it a single
-      mesh and get back a clean, skinned rig. This is the production pipeline running live, not a render.</p>
+    <p class="lead reveal">From a single <b>image</b>, generate a textured 3D model — then give it motion from a driving
+      video and rig it. Out comes a looping GIF, a rotatable 3D model, and a clean skeleton. The production pipeline,
+      running live, not a render.</p>
     <div class="cta-row reveal">
       <a class="btn btn-primary" href="#gallery">See it in action →</a>
       <a class="btn btn-ghost" href="https://github.com/AndrewTay/temporial-demo" target="_blank" rel="noopener">⬇ Get the code &amp; pipeline</a>
     </div>
     <div class="pills reveal">
+      <span class="pill"><b>Hunyuan3D-2</b> image → 3D</span>
       <span class="pill"><b>ActionMesh</b> {video + 3D} → 4D</span>
       <span class="pill"><b>SkinTokens</b> mesh → skeleton + weights</span>
-      <span class="pill">topology &amp; texture preserved</span>
     </div>
   </div>
 </header>
 
-<!-- FEATURE A · ANIMATE -->
-<section id="animate">
+<!-- FEATURE A · GENERATE (image -> 3D) -->
+<section id="generate">
   <div class="wrap">
     <span class="eyebrow reveal">Feature A · 01</span>
+    <div class="sec-head reveal"><h2 class="title">Image&nbsp;→ 3D model</h2></div>
+    <p class="lead reveal">Upload a single image and get a textured 3D mesh — the front of the pipeline. Two engines:
+      run <b>Hunyuan3D-2</b> locally (open source), or call the <b>Tencent Cloud</b> Hunyuan&nbsp;To&nbsp;3D API with your
+      own key (BYOK).</p>
+
+    <div class="tool feature-generate reveal" id="tool-generate">
+      <div class="tool-grid" style="grid-template-columns:1fr">
+        <div class="dropzone" data-input="image" data-accept="image/*">
+          <input type="file" hidden accept="image/*"/>
+          <div class="dz-body">
+            <div class="dz-ico">🖼️</div>
+            <div class="dz-t">Drop an image</div>
+            <div class="dz-s">.png / .jpg · single subject on a plain background</div>
+          </div>
+        </div>
+      </div>
+      <div class="engine-row">
+        <label class="engine"><input type="radio" name="gen-engine" value="local" checked/> <span>Local · Hunyuan3D-2</span></label>
+        <label class="engine"><input type="radio" name="gen-engine" value="byok"/> <span>Cloud · BYOK (Tencent)</span></label>
+      </div>
+      <div class="byok-fields" hidden>
+        <input class="byok-in" data-k="secret_id" type="password" placeholder="TencentCloud SecretId" autocomplete="off"/>
+        <input class="byok-in" data-k="secret_key" type="password" placeholder="TencentCloud SecretKey" autocomplete="off"/>
+        <input class="byok-in" data-k="region" type="text" placeholder="Region (default ap-guangzhou)" autocomplete="off"/>
+        <div class="byok-note">🔒 Keys go only to your local server to sign the request — never stored or sent elsewhere.</div>
+      </div>
+      <div class="tool-actions">
+        <button class="btn btn-primary" data-run="generate" disabled>Generate 3D →</button>
+        <span class="tool-note">Local needs the Hunyuan3D-2 API running (~16&nbsp;GB VRAM, textured); BYOK calls the cloud.</span>
+      </div>
+
+      <div class="stage">
+        <div class="run-line"><span class="spinner"></span><span class="run-msg">Starting…</span><span class="elapsed">0s</span></div>
+        <div class="steps">
+          <div class="step-chip" data-step="upload"><span class="dot"></span>Upload</div>
+          <div class="step-chip" data-step="generate"><span class="dot"></span>Generate mesh</div>
+          <div class="step-chip" data-step="build"><span class="dot"></span>Fetch + export</div>
+        </div>
+        <div class="proglog"></div>
+      </div>
+
+      <div class="banner err"></div>
+
+      <div class="result">
+        <div class="result-grid single">
+          <div>
+            <div class="panel-label">◆ Generated, rotatable 3D</div>
+            <div class="viewer" data-slot="model"><div class="hint">drag · scroll to zoom</div></div>
+          </div>
+        </div>
+        <div class="result-foot">
+          <a class="dl" data-dl="model" download>⬇ .glb</a>
+          <span class="result-stat" data-stat></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE B · ANIMATE -->
+<section id="animate">
+  <div class="wrap">
+    <span class="eyebrow reveal">Feature B · 02</span>
     <div class="sec-head reveal"><h2 class="title">Model&nbsp;+&nbsp;video&nbsp;→ animated 3D</h2></div>
     <p class="lead reveal">Upload a textured <code>.glb</code> and a ~4-second driving video. We run ActionMesh across three
       autoregressively-anchored windows (the “M5” method) to deform your mesh frame-by-frame, then hand back the looping
@@ -138,10 +202,10 @@
   </div>
 </section>
 
-<!-- FEATURE B · RIG -->
+<!-- FEATURE C · RIG -->
 <section id="rig">
   <div class="wrap">
-    <span class="eyebrow reveal">Feature B · 02</span>
+    <span class="eyebrow reveal">Feature C · 03</span>
     <div class="sec-head reveal"><h2 class="title">Model&nbsp;→ rigged 3D</h2></div>
     <p class="lead reveal">Upload a single <code>.glb</code>. SkinTokens (TokenRig) predicts a skeleton and per-vertex skin
       weights, transferring your original texture and scale. You get back a clean, animation-ready rig.</p>
@@ -196,7 +260,7 @@
 <!-- GALLERY (seeded real results) -->
 <section id="gallery">
   <div class="wrap">
-    <span class="eyebrow reveal">Made with this pipeline · 03</span>
+    <span class="eyebrow reveal">Made with this pipeline · 04</span>
     <div class="sec-head reveal"><h2 class="title">From driving video to living 3D</h2></div>
     <p class="lead reveal">Each row is one real run including the <b>driving video</b>, then the animated output as
       <b>GIF</b> and a <b>rotatable 3D</b> model (topology preserved).</p>
