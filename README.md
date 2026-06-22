@@ -4,7 +4,7 @@
 
 Turn a single image into living, rigged 3D:
 
-- **Generate** — an image → **Hunyuan3D-2** (local, open source) or **Tencent Cloud** Hunyuan To 3D (BYOK) → a textured `.glb`.
+- **Generate** — an image → **Hunyuan3D-2** (local, open source) → a textured `.glb`.
 - **Animate** — a model `.glb` + a short driving video → **ActionMesh M5** → an animated `.glb` (rotatable) **and** a looping GIF.
 - **Rig** — a model `.glb` → **SkinTokens / TokenRig** → a skinned, animation-ready `.glb`.
 
@@ -15,9 +15,8 @@ GitHub Pages as-is. The skeleton viewer (`rig-viewer.js`) renders a rigged `.glb
 with Three.js — no Blender needed.
 
 The three **upload** tools (generate, animate, rig) run real pipelines that need a backend; on the
-hosted site they show a *"runs locally"* state with a link back here. Generate also offers a **cloud
-BYOK** option (Tencent Cloud Hunyuan To 3D) that needs no GPU — your keys are sent only to your own
-local server to sign the request. To run any of it yourself, see [`pipeline/PIPELINE.md`](pipeline/PIPELINE.md).
+hosted site they show a *"runs locally"* state with a link back here. To run any of it yourself, see
+[`pipeline/PIPELINE.md`](pipeline/PIPELINE.md).
 
 ## Run the static site locally
 ```bash

@@ -14,7 +14,7 @@ Run with the A4D venv python (stdlib only here; the venvs are used by the subpro
 Then open http://127.0.0.1:8770
 """
 import http.server, socketserver, json, os, sys, uuid, subprocess, threading, time, shutil, struct
-import urllib.request, hashlib, hmac, base64
+import urllib.request, base64
 
 ROOT  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # Ani3D/
 SITE  = os.path.join(ROOT, "site")
@@ -30,9 +30,8 @@ WORKROOT = os.path.join(A4D, "outputs", "_work")
 PORT = 8770
 os.makedirs(JOBS, exist_ok=True)
 
-# image -> 3D backends
+# image -> 3D backend
 HY3D_LOCAL = os.environ.get("HY3D_API", "http://127.0.0.1:8080/generate")  # Hunyuan3D-2 api_server.py
-TC_HOST = "hunyuan.intl.tencentcloudapi.com"; TC_SERVICE = "hunyuan"; TC_VERSION = "2023-09-01"
 
 RIG_SAMPLES = {
     "cat-mesh": os.path.join(LIB, "cat", "inputs", "cat_50k_3d.glb"),
@@ -202,7 +201,7 @@ def run_rig(job, model_path):
         job["result"] = res; job["state"] = "done"
 
 
-# ---------------- image -> 3D (Hunyuan3D-2 local / Tencent Cloud BYOK) ----------------
+# ---------------- image -> 3D (Hunyuan3D-2, local) ----------------
 def hy3d_local(img_bytes, out_path, job):
     """Forward to a running Hunyuan3D-2 api_server (POST /generate {image:b64}) -> save GLB."""
     payload = json.dumps({"image": base64.b64encode(img_bytes).decode()}).encode()
@@ -226,96 +225,26 @@ def hy3d_local(img_bytes, out_path, job):
     return False
 
 
-def tc3_call(secret_id, secret_key, region, action, params):
-    """Tencent Cloud TC3-HMAC-SHA256 signed POST; returns the Response object."""
-    ts = int(time.time()); date = time.strftime("%Y-%m-%d", time.gmtime(ts))
-    ct = "application/json; charset=utf-8"; payload = json.dumps(params)
-    canon_headers = f"content-type:{ct}\nhost:{TC_HOST}\nx-tc-action:{action.lower()}\n"
-    signed = "content-type;host;x-tc-action"
-    canon = "POST\n/\n\n" + canon_headers + "\n" + signed + "\n" + hashlib.sha256(payload.encode()).hexdigest()
-    scope = f"{date}/{TC_SERVICE}/tc3_request"
-    sts = "TC3-HMAC-SHA256\n" + str(ts) + "\n" + scope + "\n" + hashlib.sha256(canon.encode()).hexdigest()
-    h = lambda k, m: hmac.new(k, m.encode(), hashlib.sha256).digest()
-    sk = h(("TC3" + secret_key).encode(), date); sk = h(sk, TC_SERVICE); sk = h(sk, "tc3_request")
-    sig = hmac.new(sk, sts.encode(), hashlib.sha256).hexdigest()
-    headers = {"Authorization": f"TC3-HMAC-SHA256 Credential={secret_id}/{scope}, SignedHeaders={signed}, Signature={sig}",
-               "Content-Type": ct, "Host": TC_HOST, "X-TC-Action": action,
-               "X-TC-Version": TC_VERSION, "X-TC-Timestamp": str(ts), "X-TC-Region": region}
-    req = urllib.request.Request("https://" + TC_HOST, data=payload.encode(), headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=60) as r:
-        resp = json.loads(r.read().decode("utf-8"))
-    return resp.get("Response", resp)
-
-
-def find_glb_url(obj):
-    """Recursively find the first http(s) URL that looks like a GLB."""
-    if isinstance(obj, str):
-        return obj if (obj.startswith("http") and ".glb" in obj.lower()) else None
-    if isinstance(obj, dict):
-        for v in obj.values():
-            u = find_glb_url(v)
-            if u: return u
-    if isinstance(obj, list):
-        for v in obj:
-            u = find_glb_url(v)
-            if u: return u
-    return None
-
-
-def run_generate(job, image_path, opts):
-    jid = job["id"]; out = os.path.join(JOBS, jid, "model.glb"); mode = opts.get("mode", "local")
+def run_generate(job, image_path, opts=None):
+    jid = job["id"]; out = os.path.join(JOBS, jid, "model.glb")
     job["state"] = "queued"; set_steps(job, ["upload"], None)
-    with open(image_path, "rb") as f: img = f.read()
-
-    if mode == "byok":
-        sid, skey = opts.get("secret_id"), opts.get("secret_key"); region = opts.get("region") or "ap-guangzhou"
-        if not sid or not skey:
-            job["state"] = "error"; job["error"] = "BYOK needs SecretId + SecretKey"; return
+    with open(image_path, "rb") as f:
+        img = f.read()
+    with GPU_LOCK:                                  # local Hunyuan3D-2 shares the GPU
         job["state"] = "running"; set_steps(job, ["upload"], "generate")
         try:
-            params = {"ImageBase64": base64.b64encode(img).decode()}
-            if opts.get("enable_pbr"): params["EnablePBR"] = True
-            sub = tc3_call(sid, skey, region, "SubmitHunyuanTo3DProJob", params)
-            if sub.get("Error"):
-                job["state"] = "error"; job["error"] = "Tencent: " + str(sub["Error"].get("Message")); return
-            job_id = sub.get("JobId")
-            if not job_id:
-                job["state"] = "error"; job["error"] = "no JobId: " + json.dumps(sub)[:300]; return
-            job["_log"].append("[byok] JobId=" + str(job_id)); url = None
-            for _ in range(120):                       # ~10 min
-                time.sleep(5)
-                q = tc3_call(sid, skey, region, "QueryHunyuanTo3DProJob", {"JobId": job_id})
-                st = str(q.get("Status") or q.get("JobStatus") or "").upper()
-                job["_log"].append("[byok] " + (st or json.dumps(q)[:120]))
-                if st in ("FAIL", "FAILED", "ERROR"):
-                    job["state"] = "error"; job["error"] = "Tencent job failed: " + json.dumps(q)[:300]; return
-                url = find_glb_url(q)
-                if url: break
-            if not url:
-                job["state"] = "error"; job["error"] = "no GLB url in Tencent result"; return
-            set_steps(job, ["upload", "generate"], "build")
-            with urllib.request.urlopen(url, timeout=300) as rr, open(out, "wb") as f:
-                shutil.copyfileobj(rr, f)
-            src = "Tencent Hunyuan To 3D (cloud)"
+            ok = hy3d_local(img, out, job)
         except Exception as e:
-            job["state"] = "error"; job["error"] = "BYOK error: " + str(e); return
-    else:
-        with GPU_LOCK:                                  # local Hunyuan3D-2 shares the GPU
-            job["state"] = "running"; set_steps(job, ["upload"], "generate")
-            try:
-                ok = hy3d_local(img, out, job)
-            except Exception as e:
-                job["state"] = "error"; job["error"] = (
-                    f"Hunyuan3D-2 API not reachable at {HY3D_LOCAL} ({e}). "
-                    "Start it (python api_server.py --port 8080) — see pipeline/PIPELINE.md."); return
-            if not ok:
-                job["state"] = "error"; job["error"] = "Hunyuan3D-2 returned no GLB"; return
-            set_steps(job, ["upload", "generate"], "build"); src = "Hunyuan3D-2 (local)"
-
+            job["state"] = "error"; job["error"] = (
+                f"Hunyuan3D-2 API not reachable at {HY3D_LOCAL} ({e}). "
+                "Start it (python api_server.py --port 8080) — see pipeline/PIPELINE.md."); return
+        if not ok:
+            job["state"] = "error"; job["error"] = "Hunyuan3D-2 returned no GLB"; return
+        set_steps(job, ["upload", "generate"], "build")
     if not os.path.exists(out):
         job["state"] = "error"; job["error"] = "no model produced"; return
     set_steps(job, ["upload", "generate", "build"], None)
-    job["result"] = {"model": f"/jobs/{jid}/model.glb", "source": src}; job["state"] = "done"
+    job["result"] = {"model": f"/jobs/{jid}/model.glb", "source": "Hunyuan3D-2 (local)"}; job["state"] = "done"
 
 
 def new_job(kind):
@@ -435,17 +364,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         form = parse_multipart(body, boundary)
         if "image" not in form:
             return self._json({"error": "need an image"}, 400)
-        fld = lambda k: form[k]["data"].decode("utf-8", "replace").strip() if k in form else ""
-        opts = {"mode": fld("mode") or "local"}
-        for k in ("secret_id", "secret_key", "region"):
-            v = fld(k)
-            if v:
-                opts[k] = v
-        if fld("enable_pbr").lower() in ("1", "true", "on", "yes"):
-            opts["enable_pbr"] = True
         job = new_job("generate")
         image = self._save(job["id"], "image", form["image"])
-        threading.Thread(target=run_generate, args=(job, image, opts), daemon=True).start()
+        threading.Thread(target=run_generate, args=(job, image), daemon=True).start()
         self._json({"id": job["id"]})
 
 

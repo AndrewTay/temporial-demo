@@ -69,9 +69,8 @@
   <div class="wrap">
     <span class="eyebrow reveal">Feature A · 01</span>
     <div class="sec-head reveal"><h2 class="title">Image&nbsp;→ 3D model</h2></div>
-    <p class="lead reveal">Upload a single image and get a textured 3D mesh — the front of the pipeline. Two engines:
-      run <b>Hunyuan3D-2</b> locally (open source), or call the <b>Tencent Cloud</b> Hunyuan&nbsp;To&nbsp;3D API with your
-      own key (BYOK).</p>
+    <p class="lead reveal">Upload a single image and get a textured 3D mesh — the front of the pipeline, powered by
+      <b>Hunyuan3D-2</b> (open source) running locally.</p>
 
     <div class="tool feature-generate reveal" id="tool-generate">
       <div class="tool-grid" style="grid-template-columns:1fr">
@@ -84,19 +83,9 @@
           </div>
         </div>
       </div>
-      <div class="engine-row">
-        <label class="engine"><input type="radio" name="gen-engine" value="local" checked/> <span>Local · Hunyuan3D-2</span></label>
-        <label class="engine"><input type="radio" name="gen-engine" value="byok"/> <span>Cloud · BYOK (Tencent)</span></label>
-      </div>
-      <div class="byok-fields" hidden>
-        <input class="byok-in" data-k="secret_id" type="password" placeholder="TencentCloud SecretId" autocomplete="off"/>
-        <input class="byok-in" data-k="secret_key" type="password" placeholder="TencentCloud SecretKey" autocomplete="off"/>
-        <input class="byok-in" data-k="region" type="text" placeholder="Region (default ap-guangzhou)" autocomplete="off"/>
-        <div class="byok-note">🔒 Keys go only to your local server to sign the request — never stored or sent elsewhere.</div>
-      </div>
       <div class="tool-actions">
         <button class="btn btn-primary" data-run="generate" disabled>Generate 3D →</button>
-        <span class="tool-note">Local needs the Hunyuan3D-2 API running (~16&nbsp;GB VRAM, textured); BYOK calls the cloud.</span>
+        <span class="tool-note">Runs <b>Hunyuan3D-2</b> locally on a GPU (~16&nbsp;GB VRAM for textured).</span>
       </div>
 
       <div class="stage">

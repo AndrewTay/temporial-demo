@@ -245,14 +245,3 @@ footer{border-top:1px solid var(--line);padding:34px 0;margin-top:60px;position:
   h2.title{font-size:clamp(1.55rem,7vw,2rem)}
   .lead{font-size:1rem}
 }
-
-/* ---- generate: engine picker + BYOK ---- */
-.engine-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.engine{display:inline-flex;align-items:center;gap:8px;font-size:.86rem;color:var(--ink-2);border:1px solid var(--line-2);border-radius:10px;padding:9px 13px;cursor:pointer;background:rgba(10,13,20,.35);transition:.18s}
-.engine:hover{border-color:var(--accent);color:var(--ink)}
-.engine input{accent-color:var(--accent);margin:0}
-.byok-fields{display:grid;gap:8px;margin-top:12px;max-width:440px}
-.byok-in{background:rgba(10,13,20,.55);border:1px solid var(--line-2);border-radius:8px;padding:9px 12px;color:var(--ink);font-family:var(--mono);font-size:.8rem}
-.byok-in::placeholder{color:var(--ink-3)}
-.byok-in:focus{outline:none;border-color:var(--accent)}
-.byok-note{font-family:var(--mono);font-size:.72rem;color:var(--ink-3);letter-spacing:.02em}

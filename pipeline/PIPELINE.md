@@ -7,7 +7,7 @@
 |---|---|
 | `POST /api/animate` | model `.glb` + driving video → **ActionMesh M5** → animated `.glb` + GIF |
 | `POST /api/rig` | model `.glb` → **SkinTokens / TokenRig** → rigged `.glb` |
-| `POST /api/generate` | image → **Hunyuan3D-2** (local) **or** **Tencent Cloud** Hunyuan To 3D (BYOK) → textured `.glb` |
+| `POST /api/generate` | image → **Hunyuan3D-2** (local) → textured `.glb` |
 | `GET /api/job/<id>` | job status `{state, step, done, log, result}` (the front-end polls this) |
 
 It serves the static site from its own folder and shells out to the generators.
@@ -20,20 +20,16 @@ An NVIDIA GPU (≈16 GB is enough) plus two upstream projects, set up with their
   retimed to ~4 s.
 - **SkinTokens / TokenRig** — https://github.com/VAST-AI-Research/SkinTokens — mesh → skeleton +
   per-vertex skin weights (texture & scale preserved via `--use_transfer`).
-- **Hunyuan3D-2** (image→3D, optional) — https://github.com/Tencent-Hunyuan/Hunyuan3D-2 — run its own
-  API: `python api_server.py --host 0.0.0.0 --port 8080` (~6 GB VRAM shape-only, ~16 GB textured). Our
-  server forwards the uploaded image to it. *Or* skip local entirely and use the cloud (BYOK) with no GPU.
+- **Hunyuan3D-2** (image→3D) — https://github.com/Tencent-Hunyuan/Hunyuan3D-2 — run its own API:
+  `python api_server.py --host 0.0.0.0 --port 8080` (~6 GB VRAM shape-only, ~16 GB textured). Our
+  server forwards the uploaded image to it.
 
 ## What server.py calls
 - Animate: `bash A4D/scripts/make_4d.sh TAG VIDEO MESH OUTDIR` → then `to_gif.py` (imageio + Pillow)
   to turn the M5 clip into the looping GIF.
 - Rig: `SkinTokens/demo.py --input <in.glb> --output <out.glb> --use_transfer`.
-- Generate · local: POSTs the image (base64) to the Hunyuan3D-2 api_server at `HY3D_API`
+- Generate: POSTs the image (base64) to the Hunyuan3D-2 api_server at `HY3D_API`
   (default `http://127.0.0.1:8080/generate`) and saves the returned GLB.
-- Generate · BYOK: TC3-HMAC-SHA256-signs `SubmitHunyuanTo3DProJob`, polls `QueryHunyuanTo3DProJob`
-  (service `hunyuan`, host `hunyuan.intl.tencentcloudapi.com`, version `2023-09-01`), then downloads the
-  result GLB. The user's SecretId/SecretKey are sent only to this local server to sign the request —
-  never stored or forwarded anywhere else.
 
 `server.py` here is the reference glue — point the `A4D` / `SKIN` paths at your own checkouts of the
 two projects.

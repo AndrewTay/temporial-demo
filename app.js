@@ -245,18 +245,6 @@
     /* run */
     runBtn.addEventListener("click", function () { startRun(null); });
 
-    /* generate: engine toggle (local Hunyuan3D-2 / BYOK Tencent) */
-    if (kind === "generate") {
-      var byok = $(".byok-fields", root);
-      var syncEngine = function () {
-        var v = (root.querySelector('input[name="gen-engine"]:checked') || {}).value;
-        if (byok) byok.hidden = (v !== "byok");
-      };
-      $all('input[name="gen-engine"]', root).forEach(function (r) { r.addEventListener("change", syncEngine); });
-      syncEngine();
-      if (typeof LIVE !== "undefined" && !LIVE && byok) byok.hidden = true;   // never solicit secrets on the static site
-    }
-
     function startRun(sampleReq) {
       if (!LIVE) return showLocalOnly();
       hideErr(); result.classList.remove("show");
@@ -274,11 +262,7 @@
       } else {
         var fd = new FormData();
         required.forEach(function (k) { fd.append(k, files[k]); });
-        if (kind === "generate") {
-          var eng = (root.querySelector('input[name="gen-engine"]:checked') || {}).value || "local";
-          fd.append("mode", eng);
-          if (eng === "byok") $all(".byok-in", root).forEach(function (i) { if (i.value) fd.append(i.dataset.k, i.value); });
-        }
+        if (kind === "generate") fd.append("mode", "local");
         opts = { method: "POST", body: fd };
       }
       fetch(url, opts).then(function (r) { return r.json(); }).then(function (j) {
