@@ -32,5 +32,7 @@ two projects.
 - One GPU job at a time (a lock); progress steps are derived by watching the work dir.
 - **Windows: use Git Bash, not WSL bash** — WSL maps `C:` → `/mnt/c`, which breaks the script's
   `/c/...` paths.
-- An animate run is ~30 min on a 16 GB GPU; a rig run is a few minutes. Keep the server running in a
-  real terminal for the full duration.
+- **Speed scales with the GPU.** ActionMesh's published H100 figures are **~75 s** (default) /
+  **~45 s** (`--fast`) *per window*; M5 chains **3 windows**, so an animate run is only a **few minutes
+  on an H100 / B100-class card**. On our 16 GB RTX 5070 Ti it's forced into `--low_ram`, which is what
+  makes the same run **~30 min**. A rig run is a few minutes. Keep the server running for the full duration.
