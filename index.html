@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Temporial · live demo — image-born 3D, brought to life</title>
+<meta name="description" content="Upload a 3D model + a driving video to get an animated 3D asset (GIF + rotatable model), or upload a model to auto-rig it with SkinTokens."/>
+<link rel="icon" type="image/png" href="assets/nav_mark.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+<script type="module" src="vendor/model-viewer.min.js"></script>
+</head>
+<body id="top">
+
+<!-- scroll-scrub video background -->
+<div id="scroll-video-container">
+  <canvas id="video-canvas"></canvas>
+  <video id="video-fallback" muted playsinline preload="auto" src="assets/flower_video.mp4"></video>
+</div>
+<div class="video-scrim"></div>
+<div class="bg-glow"></div>
+<div class="bg-vignette"></div>
+<canvas id="particles"></canvas>
+<div class="progress" id="progress"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top"><img src="assets/nav_mark.png" alt="Temporial mark"/><span class="wm">Temporial</span></a>
+    <div class="nav-links">
+      <a href="#animate">Animate</a>
+      <a href="#rig">Rig</a>
+      <a href="#gallery">Gallery</a>
+      <a href="https://github.com/AndrewTay/temporial-demo" target="_blank" rel="noopener">Code ↗</a>
+    </div>
+    <a class="nav-cta" href="https://github.com/AndrewTay/temporial-demo" target="_blank" rel="noopener">Get the code →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap hero-inner">
+    <span class="eyebrow reveal">Live demo · the last 10% of 4D</span>
+    <h1 class="reveal">Give an image-born 3D model <span class="grad">motion and a rig</span>.</h1>
+    <p class="lead reveal">Drop in a static mesh and a short driving video, and Temporial returns a topology-consistent
+      <em>animated</em> 3D asset — as a looping GIF <b>and</b> a model you can spin in your browser. Or hand it a single
+      mesh and get back a clean, skinned rig. This is the production pipeline running live, not a render.</p>
+    <div class="cta-row reveal">
+      <a class="btn btn-primary" href="#gallery">See it in action →</a>
+      <a class="btn btn-ghost" href="https://github.com/AndrewTay/temporial-demo" target="_blank" rel="noopener">⬇ Get the code &amp; pipeline</a>
+    </div>
+    <div class="pills reveal">
+      <span class="pill"><b>ActionMesh</b> {video + 3D} → 4D</span>
+      <span class="pill"><b>SkinTokens</b> mesh → skeleton + weights</span>
+      <span class="pill">topology &amp; texture preserved</span>
+    </div>
+  </div>
+</header>
+
+<!-- FEATURE A · ANIMATE -->
+<section id="animate">
+  <div class="wrap">
+    <span class="eyebrow reveal">Feature A · 01</span>
+    <div class="sec-head reveal"><h2 class="title">Model&nbsp;+&nbsp;video&nbsp;→ animated 3D</h2></div>
+    <p class="lead reveal">Upload a textured <code>.glb</code> and a ~4-second driving video. We run ActionMesh across three
+      autoregressively-anchored windows (the “M5” method) to deform your mesh frame-by-frame, then hand back the looping
+      GIF and a rotatable animated model.</p>
+
+    <div class="tool feature-animate reveal" id="tool-animate">
+      <div class="tool-grid">
+        <div class="dropzone" data-input="model" data-accept=".glb,.gltf">
+          <input type="file" hidden accept=".glb,.gltf"/>
+          <div class="dz-body">
+            <div class="dz-ico">🧊</div>
+            <div class="dz-t">Drop a 3D model</div>
+            <div class="dz-s">.glb / .gltf · neutral pose</div>
+          </div>
+        </div>
+        <div class="dropzone" data-input="video" data-accept="video/*,.mp4">
+          <input type="file" hidden accept="video/*,.mp4"/>
+          <div class="dz-body">
+            <div class="dz-ico">🎬</div>
+            <div class="dz-t">Drop a driving video</div>
+            <div class="dz-s">.mp4 · ~4s of motion</div>
+          </div>
+        </div>
+      </div>
+      <div class="tool-actions">
+        <button class="btn btn-primary" data-run="animate" disabled>Generate animated 3D →</button>
+        <span class="tool-note">No files? Try a sample:
+          <a class="sample" data-sample="cat-walk">cat walk</a> ·
+          <a class="sample" data-sample="cat-groom">cat groom</a> ·
+          <a class="sample" data-sample="pug-walk">pug walk</a>
+        </span>
+      </div>
+
+      <!-- live progress -->
+      <div class="stage">
+        <div class="run-line"><span class="spinner"></span><span class="run-msg">Starting…</span><span class="elapsed">0s</span></div>
+        <div class="steps">
+          <div class="step-chip" data-step="upload"><span class="dot"></span>Upload</div>
+          <div class="step-chip" data-step="seg"><span class="dot"></span>Segment</div>
+          <div class="step-chip" data-step="w1"><span class="dot"></span>Window 1/3</div>
+          <div class="step-chip" data-step="w2"><span class="dot"></span>Window 2/3</div>
+          <div class="step-chip" data-step="w3"><span class="dot"></span>Window 3/3</div>
+          <div class="step-chip" data-step="build"><span class="dot"></span>Assemble + GIF</div>
+        </div>
+        <div class="proglog"></div>
+      </div>
+
+      <div class="banner err"></div>
+
+      <!-- result -->
+      <div class="result">
+        <div class="result-grid">
+          <div>
+            <div class="panel-label">◆ Rotatable animated 3D</div>
+            <div class="viewer" data-slot="model"><div class="hint">drag · scroll to zoom</div></div>
+          </div>
+          <div>
+            <div class="panel-label">◆ Looping GIF</div>
+            <div class="gifwrap" data-slot="gif"></div>
+          </div>
+        </div>
+        <div class="result-foot">
+          <a class="dl" data-dl="model" download>⬇ animated .glb</a>
+          <a class="dl" data-dl="gif" download>⬇ .gif</a>
+          <span class="result-stat" data-stat></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE B · RIG -->
+<section id="rig">
+  <div class="wrap">
+    <span class="eyebrow reveal">Feature B · 02</span>
+    <div class="sec-head reveal"><h2 class="title">Model&nbsp;→ rigged 3D</h2></div>
+    <p class="lead reveal">Upload a single <code>.glb</code>. SkinTokens (TokenRig) predicts a skeleton and per-vertex skin
+      weights, transferring your original texture and scale. You get back a clean, animation-ready rig.</p>
+
+    <div class="tool feature-rig reveal" id="tool-rig">
+      <div class="tool-grid" style="grid-template-columns:1fr">
+        <div class="dropzone" data-input="model" data-accept=".glb,.gltf">
+          <input type="file" hidden accept=".glb,.gltf"/>
+          <div class="dz-body">
+            <div class="dz-ico">🦴</div>
+            <div class="dz-t">Drop a 3D model to rig</div>
+            <div class="dz-s">.glb / .gltf · neutral pose</div>
+          </div>
+        </div>
+      </div>
+      <div class="tool-actions">
+        <button class="btn btn-primary" data-run="rig" disabled>Rig with SkinTokens →</button>
+        <span class="tool-note">No file? Try a sample:
+          <a class="sample" data-sample="cat-mesh">cat mesh</a> ·
+          <a class="sample" data-sample="pug-mesh">pug mesh</a>
+        </span>
+      </div>
+
+      <div class="stage">
+        <div class="run-line"><span class="spinner"></span><span class="run-msg">Starting…</span><span class="elapsed">0s</span></div>
+        <div class="steps">
+          <div class="step-chip" data-step="upload"><span class="dot"></span>Upload</div>
+          <div class="step-chip" data-step="rig"><span class="dot"></span>Predict skeleton + weights</div>
+          <div class="step-chip" data-step="build"><span class="dot"></span>Bind + export</div>
+        </div>
+        <div class="proglog"></div>
+      </div>
+
+      <div class="banner err"></div>
+
+      <div class="result">
+        <div class="result-grid single">
+          <div>
+            <div class="panel-label">◆ Rigged, rotatable 3D</div>
+            <div class="viewer" data-slot="model"><div class="hint">drag · scroll to zoom</div></div>
+          </div>
+        </div>
+        <div class="result-foot">
+          <a class="dl" data-dl="model" download>⬇ rigged .glb</a>
+          <span class="result-stat" data-stat></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY (seeded real results) -->
+<section id="gallery">
+  <div class="wrap">
+    <span class="eyebrow reveal">Made with this pipeline · 03</span>
+    <div class="sec-head reveal"><h2 class="title">Real outputs, ready to spin</h2></div>
+    <p class="lead reveal">Each pair below is a real ActionMesh M5 result: the looping GIF on the left, the same animated
+      mesh — rotatable and texture-preserved — on the right.</p>
+    <div class="gallery reveal">
+      <div class="gcard">
+        <div class="twin">
+          <div class="cell"><span class="tag">gif</span><img src="samples/cat_walk.gif" alt="cat walk gif" loading="lazy"/></div>
+          <button class="cell load3d" data-glb="models/cat_walk.glb"><span class="tag">3d</span><span class="load3d-btn">⊕ load 3D</span></button>
+        </div>
+        <div class="meta"><div class="t">Cat · walk</div><div class="d">realistic · 50k tris · M5</div></div>
+      </div>
+      <div class="gcard">
+        <div class="twin">
+          <div class="cell"><span class="tag">gif</span><img src="samples/cat_groom.gif" alt="cat groom gif" loading="lazy"/></div>
+          <button class="cell load3d" data-glb="models/cat_groom.glb"><span class="tag">3d</span><span class="load3d-btn">⊕ load 3D</span></button>
+        </div>
+        <div class="meta"><div class="t">Cat · groom</div><div class="d">topology held · no melting</div></div>
+      </div>
+      <div class="gcard">
+        <div class="twin">
+          <div class="cell"><span class="tag">gif</span><img src="samples/pug_walk.gif" alt="pug walk gif" loading="lazy"/></div>
+          <button class="cell load3d" data-glb="models/pug_walk.glb"><span class="tag">3d</span><span class="load3d-btn">⊕ load 3D</span></button>
+        </div>
+        <div class="meta"><div class="t">Pug · walk</div><div class="d">cartoon · textured</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-in">
+    <a class="brand" href="#top"><img src="assets/nav_mark.png" alt="Temporial mark"/><span class="wm">Temporial</span></a>
+    <span class="t">ActionMesh {video+3D}→4D · SkinTokens rigging. The live generators run locally on a single GPU — grab the code to run them yourself.</span>
+  </div>
+  <div class="wrap"><div class="refs">
+    <a href="https://github.com/AndrewTay/temporial-demo" target="_blank" rel="noopener">⬇ Source &amp; pipeline <span class="ax">→</span></a>
+    <a href="https://github.com/facebookresearch/actionmesh" target="_blank" rel="noopener">ActionMesh <span class="ax">→</span></a>
+    <a href="https://github.com/VAST-AI-Research/SkinTokens" target="_blank" rel="noopener">SkinTokens <span class="ax">→</span></a>
+    <a href="https://github.com/VAST-AI-Research/TripoSG" target="_blank" rel="noopener">TripoSG <span class="ax">→</span></a>
+  </div></div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>
