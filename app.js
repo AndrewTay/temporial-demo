@@ -226,7 +226,6 @@
     });
 
     var ANIM_SAMPLES = {
-      "cat-walk": { model: "models/cat_walk.glb", gif: "samples/cat_walk.gif", stat: "Cat · walk · M5 native chain" },
       "cat-groom": { model: "models/cat_groom.glb", gif: "samples/cat_groom.gif", stat: "Cat · groom · M5 native chain" },
       "pug-walk": { model: "models/pug_walk.glb", gif: "samples/pug_walk.gif", stat: "Pug · walk · textured" }
     };
